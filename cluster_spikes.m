@@ -1,4 +1,4 @@
-function [idc] = cluster_spikes_v0(spikes, p, DISTANCE_CUT_OFF)
+function [idc] = cluster_spikes(spikes, p, DISTANCE_CUT_OFF)
 %CLUSTER_SPIKES_V0 Cluster spikes when separated along the profile
 %   use Hierarchical clustering
 % 

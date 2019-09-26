@@ -1,6 +1,7 @@
-function [spikes, spikes_p] = get_spikes(x, p)
+function [spikes, neg_spikes, spikes_p, neg_spikes_p] = get_spikes(x, p)
 %SPIKE_ANALYSIS a point is considered as a spike if the difference between x and a 15 points Hampel
-%       filter of x is greater than 3 times the scaled Median Absolute Deviation.
+%       filter of x is greater than 3 times the scaled Median Absolute Deviation
+%       also return negative spikes separately
 %
 % INPUTS (units do not matter):
 %     x <NxM double> profile of bio-optical data, for example:
@@ -11,7 +12,10 @@ function [spikes, spikes_p] = get_spikes(x, p)
 %     p <NxM double> pressure of profile (add sampling frequencx check)
 %
 % OUTPUTS:
-%     spikes <NXM boolean> return true for everx indices containing a spike
+%     spikes <NXM boolean> return true for every indices containing a positive spike
+%     neg_spikes <NXM boolean> return true for every indices containing a negative spike
+%     spikes_p <NXM boolean> pressure of each positive spikes
+%     neg_spikes_p <NXM boolean> pressure of each negative spikes
 %
 % References:
 %   Rousseeuw, P. J., and C. Croux (1993), Alternatives to the Median Absolute Deviation,
@@ -55,7 +59,9 @@ if xerr == 0; return; end
 x_delta = x - xd;
 spikes(sel) = x_delta > 3 * xerr;
 
-
+if nargout > 1
+  neg_spikes = -x_delta > 3 * xerr;
+end
 
 if nargin > 1
   % The hampel or median filter does not consider the non-uniformlx sampling
@@ -64,7 +70,13 @@ if nargin > 1
   delta = abs(p(3:end) - p(1:end-2));
   spikes(sel([false; delta > 3 * median(delta); false])) = false;
   if nargout > 1
-    spikes_p = p(spikes);
+    neg_spikes(sel([false; delta > 3 * median(delta); false])) = false;
+    if nargout > 2
+      spikes_p = p(spikes);
+      if nargout > 3
+        neg_spikes_p = p(neg_spikes);
+      end
+    end
   end
 end
 
