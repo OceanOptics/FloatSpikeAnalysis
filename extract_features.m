@@ -14,16 +14,18 @@ end
 
 n = max(idc); if isnan(n); n=0; end
 if nargin > 2
-  features = array2table([NaN(n,11)], 'VariableNames',...
-                    {'p', 'p_sd', 'n', 'p_shallow', 'p_deep', 'n_x_neg', 'density', 'intensity', 'intensity_sd', 'intensity_norm', 'intensity_norm_sd'});
+  features = array2table(NaN(n,8), 'VariableNames',...
+                    {'p', 'p_sd', 'n', 'p_shallow', 'p_deep', 'density', 'intensity', 'intensity_norm'});
 else
-  features = array2table([NaN(n,7)], 'VariableNames',...
-                    {'p', 'p_sd', 'n', 'p_shallow', 'p_deep', 'n_x_neg', 'density'});
+  features = array2table(NaN(n,6), 'VariableNames',...
+                    {'p', 'p_sd', 'n', 'p_shallow', 'p_deep', 'density'});
 end
 
-
-x0 = x - min(x); % Adjust values to make sure positive signal
-% x_snr_floor = snr(x(~isnan(x) & isnan(idc)));
+if nargin > 2
+  x0 = x - min(x); % Adjust values to make sure positive signal
+  x0_avg = nanmedian(x0);
+  % x_snr_floor = snr(x(~isnan(x) & isnan(idc)));
+end
 for i=1:n
   sel = idc == i;
   if isempty(sel); continue; end
@@ -35,8 +37,6 @@ for i=1:n
   features.p_deep(i) = max(p(sel));
   
   features.density(i) = features.n(i) / (features.p_deep(i) - features.p_shallow(i));
-  
-  features.n_x_neg(i) = sum(x(features.p_shallow(i) <= p & p <= features.p_deep(i)) < 0);
   
 %   % Signal to Noise Ratio
 %   snr_sel = features.p_shallow(i) <= p & p <= features.p_deep(i) &...
@@ -50,13 +50,15 @@ for i=1:n
 %   end
   
   if nargin > 2
+    % Check if negative values in interval
+%     features.n_x_neg(i) = sum(x(features.p_shallow(i) <= p & p <= features.p_deep(i)) < 0);
     % Compute absoulte intensity
     features.intensity(i) = nanmedian(x(sel));
-    features.intensity_sd(i) = nanstd(x(sel));
+%     features.intensity_sd(i) = nanstd(x(sel));
     % Compute relative intensity
-    si = x0(sel) ./ nanmedian(x0); % Normalize
+    si = x0(sel) ./ x0_avg; % Normalize
     features.intensity_norm(i) = nanmedian(si);
-    features.intensity_norm_sd(i) = nanstd(si);    
+%     features.intensity_norm_sd(i) = nanstd(si);    
   end
 end
 

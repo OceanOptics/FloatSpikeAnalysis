@@ -1,4 +1,4 @@
-function [idc] = cluster_spikes(spikes, p, DISTANCE_CUT_OFF)
+function [idc] = cluster_spikes(spikes, p, min_depth, distance_cut_off)
 %CLUSTER_SPIKES_V0 Cluster spikes when separated along the profile
 %   use Hierarchical clustering
 % 
@@ -7,7 +7,8 @@ function [idc] = cluster_spikes(spikes, p, DISTANCE_CUT_OFF)
 %     spikes <Nx1 double|boolean> indices at which there is spikes.
 %
 % OPTIONAL INPUTS:
-%     DISTANCE_CUT_OFF <Nx1> euclidean distance used in clustering algorithm to cut tree
+%     min_depth <double> distance
+%     distance_cut_off <double> euclidean distance used in clustering algorithm to cut tree
 %         default: 50 (units of p: dBar or meters in general)
 %
 % OUTPUTS:
@@ -27,22 +28,26 @@ function [idc] = cluster_spikes(spikes, p, DISTANCE_CUT_OFF)
 % author: Nils Haentjens
 % created: Sept 11, 2019
 
-if nargin < 2
-  DISTANCE_CUT_OFF = 50; % dBar
-end
+if nargin < 3 || isempty(min_depth); min_depth = 10; end
+if nargin < 4 || isempty(distance_cut_off); distance_cut_off = 50; end
 
 if size(p) ~= size(spikes); error('Input vectors are different size.'); end
 if size(p,2) ~= 1; error('Input must be row vectors.'); end
 
+% Ignore spikes shallower than min_depth
+spikes(p < min_depth) = false;
+
+% One cluster if only 1 spike
 if sum(spikes) < 2
   idc = NaN(size(p));
   idc(spikes) = 1;
   return 
 end
 
+% Hierachical Cluster
 D = pdist(p(spikes),'euclidean');
 ClusterTree = linkage(D,'single');
-idx = cluster(ClusterTree,'criterion','distance','cutoff',50);
+idx = cluster(ClusterTree,'criterion','distance','cutoff', distance_cut_off);
 
 idc = NaN(size(p));
 idc(spikes) = idx;
